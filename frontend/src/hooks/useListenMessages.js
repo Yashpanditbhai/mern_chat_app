@@ -1,23 +1,12 @@
-import { useEffect } from "react";
-
-import { useSocketContext } from "../context/SocketContext";
-import useConversation from "../zustand/useConversation";
-
-import notificationSound from "../assets/sounds/notification.mp3";
-
+// This hook is now a NO-OP.
+// All real-time message handling has been moved to SocketContext
+// which uses Zustand's getState() to avoid stale closures and
+// handles messages globally (even when chat is not open).
+//
+// Kept for backward compatibility — can be removed if all
+// imports are cleaned up.
 const useListenMessages = () => {
-	const { socket } = useSocketContext();
-	const { messages, setMessages } = useConversation();
-
-	useEffect(() => {
-		socket?.on("newMessage", (newMessage) => {
-			newMessage.shouldShake = true;
-			const sound = new Audio(notificationSound);
-			sound.play();
-			setMessages([...messages, newMessage]);
-		});
-
-		return () => socket?.off("newMessage");
-	}, [socket, setMessages, messages]);
+	// Nothing to do — SocketContext handles everything
 };
+
 export default useListenMessages;

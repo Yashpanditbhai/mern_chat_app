@@ -13,10 +13,9 @@ const useLogout = () => {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 			});
+
 			const data = await res.json();
-			if (data.error) {
-				throw new Error(data.error);
-			}
+			if (!res.ok) throw new Error(data.error || "Logout failed");
 
 			localStorage.removeItem("chat-user");
 			setAuthUser(null);
@@ -29,4 +28,5 @@ const useLogout = () => {
 
 	return { loading, logout };
 };
+
 export default useLogout;

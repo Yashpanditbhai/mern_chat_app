@@ -1,13 +1,38 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
-import { getReceiverSocketId, io } from "../socket/socket.js";
+import User from "../models/user.model.js";
+import { getReceiverSocketId, io, isUserOnline } from "../socket/socket.js";
+import { getFileType } from "../middleware/upload.js";
 
 export const sendMessage = async (req, res) => {
 	try {
 		const { message } = req.body;
 		const { id: receiverId } = req.params;
 		const senderId = req.user._id;
+		const file = req.file; // From multer
 
+		// ─── Validation ────────────────────────────────────
+		const hasText = message && typeof message === "string" && message.trim().length > 0;
+		const hasFile = !!file;
+
+		if (!hasText && !hasFile) {
+			return res.status(400).json({ error: "Message or file is required" });
+		}
+
+		if (hasText && message.length > 5000) {
+			return res.status(400).json({ error: "Message too long (max 5000 characters)" });
+		}
+
+		if (senderId.toString() === receiverId) {
+			return res.status(400).json({ error: "Cannot send message to yourself" });
+		}
+
+		const receiverUser = await User.findById(receiverId);
+		if (!receiverUser) {
+			return res.status(404).json({ error: "Receiver not found" });
+		}
+
+		// ─── Find or create conversation ───────────────────
 		let conversation = await Conversation.findOne({
 			participants: { $all: [senderId, receiverId] },
 		});
@@ -18,32 +43,55 @@ export const sendMessage = async (req, res) => {
 			});
 		}
 
-		const newMessage = new Message({
+		const initialStatus = isUserOnline(receiverId) ? "delivered" : "sent";
+
+		// ─── Build message object ──────────────────────────
+		const messageData = {
 			senderId,
 			receiverId,
-			message,
-		});
+			message: hasText ? message.trim() : "",
+			status: initialStatus,
+		};
 
-		if (newMessage) {
-			conversation.messages.push(newMessage._id);
+		if (hasFile) {
+			messageData.file = {
+				url: `/uploads/${file.filename}`,
+				name: file.originalname,
+				type: getFileType(file.mimetype),
+				mimeType: file.mimetype,
+				size: file.size,
+			};
 		}
 
-		// await conversation.save();
-		// await newMessage.save();
+		const newMessage = new Message(messageData);
 
-		// this will run in parallel
+		// Update conversation
+		conversation.messages.push(newMessage._id);
+
+		const previewText = hasFile
+			? `${hasText ? message.trim().substring(0, 50) : getFileType(file.mimetype) === "image" ? "Photo" : "File"}`
+			: message.trim().substring(0, 100);
+
+		conversation.lastMessage = {
+			text: previewText,
+			senderId,
+			createdAt: new Date(),
+		};
+
 		await Promise.all([conversation.save(), newMessage.save()]);
 
-		// SOCKET IO FUNCTIONALITY WILL GO HERE
+		// ─── Real-time delivery ────────────────────────────
 		const receiverSocketId = getReceiverSocketId(receiverId);
 		if (receiverSocketId) {
-			// io.to(<socket_id>).emit() used to send events to specific client
-			io.to(receiverSocketId).emit("newMessage", newMessage);
+			io.to(receiverId).emit("newMessage", {
+				...newMessage.toJSON(),
+				conversationId: conversation._id,
+			});
 		}
 
 		res.status(201).json(newMessage);
 	} catch (error) {
-		console.log("Error in sendMessage controller: ", error.message);
+		console.error("Error in sendMessage controller:", error.message);
 		res.status(500).json({ error: "Internal server error" });
 	}
 };
@@ -52,18 +100,46 @@ export const getMessages = async (req, res) => {
 	try {
 		const { id: userToChatId } = req.params;
 		const senderId = req.user._id;
+		const page = parseInt(req.query.page) || 1;
+		const limit = parseInt(req.query.limit) || 50;
 
 		const conversation = await Conversation.findOne({
 			participants: { $all: [senderId, userToChatId] },
-		}).populate("messages"); // NOT REFERENCE BUT ACTUAL MESSAGES
+		});
 
-		if (!conversation) return res.status(200).json([]);
+		if (!conversation) return res.status(200).json({ messages: [], hasMore: false });
 
-		const messages = conversation.messages;
+		const totalMessages = conversation.messages.length;
+		const totalPages = Math.ceil(totalMessages / limit);
+		const skip = Math.max(0, totalMessages - page * limit);
 
-		res.status(200).json(messages);
+		await conversation.populate({
+			path: "messages",
+			options: {
+				skip,
+				limit,
+				sort: { createdAt: 1 },
+			},
+		});
+
+		await Message.updateMany(
+			{ senderId: userToChatId, receiverId: senderId, status: { $ne: "seen" } },
+			{ $set: { status: "seen" } }
+		);
+
+		const senderSocketId = getReceiverSocketId(userToChatId);
+		if (senderSocketId) {
+			io.to(userToChatId).emit("messagesSeen", { by: senderId.toString() });
+		}
+
+		res.status(200).json({
+			messages: conversation.messages,
+			hasMore: page < totalPages,
+			currentPage: page,
+			totalPages,
+		});
 	} catch (error) {
-		console.log("Error in getMessages controller: ", error.message);
+		console.error("Error in getMessages controller:", error.message);
 		res.status(500).json({ error: "Internal server error" });
 	}
 };

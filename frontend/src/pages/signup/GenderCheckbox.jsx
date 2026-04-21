@@ -1,50 +1,45 @@
 const GenderCheckbox = ({ onCheckboxChange, selectedGender }) => {
 	return (
-		<div className='flex'>
-			<div className='form-control'>
-				<label className={`label gap-2 cursor-pointer ${selectedGender === "male" ? "selected" : ""} `}>
-					<span className='label-text'>Male</span>
+		<div>
+			<label className='block text-sm font-medium text-slate-300 mb-2'>Gender</label>
+			<div className='flex gap-4'>
+				<label
+					className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border cursor-pointer transition-all ${
+						selectedGender === "male"
+							? "border-primary bg-primary/10 text-primary"
+							: "border-slate-600 bg-base-300 text-slate-400 hover:border-slate-500"
+					}`}
+				>
 					<input
-						type='checkbox'
-						className='checkbox border-slate-900'
+						type='radio'
+						name='gender'
+						className='hidden'
 						checked={selectedGender === "male"}
 						onChange={() => onCheckboxChange("male")}
 					/>
+					<span className='text-lg'>&#9794;</span>
+					<span className='text-sm font-medium'>Male</span>
 				</label>
-			</div>
-			<div className='form-control'>
-				<label className={`label gap-2 cursor-pointer  ${selectedGender === "female" ? "selected" : ""}`}>
-					<span className='label-text '>Female</span>
+				<label
+					className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border cursor-pointer transition-all ${
+						selectedGender === "female"
+							? "border-pink-500 bg-pink-500/10 text-pink-500"
+							: "border-slate-600 bg-base-300 text-slate-400 hover:border-slate-500"
+					}`}
+				>
 					<input
-						type='checkbox'
-						className='checkbox border-slate-900'
+						type='radio'
+						name='gender'
+						className='hidden'
 						checked={selectedGender === "female"}
 						onChange={() => onCheckboxChange("female")}
 					/>
+					<span className='text-lg'>&#9792;</span>
+					<span className='text-sm font-medium'>Female</span>
 				</label>
 			</div>
 		</div>
 	);
 };
-export default GenderCheckbox;
 
-// STARTER CODE FOR THIS FILE
-// const GenderCheckbox = () => {
-// 	return (
-// 		<div className='flex'>
-// 			<div className='form-control'>
-// 				<label className={`label gap-2 cursor-pointer`}>
-// 					<span className='label-text'>Male</span>
-// 					<input type='checkbox' className='checkbox border-slate-900' />
-// 				</label>
-// 			</div>
-// 			<div className='form-control'>
-// 				<label className={`label gap-2 cursor-pointer`}>
-// 					<span className='label-text'>Female</span>
-// 					<input type='checkbox' className='checkbox border-slate-900' />
-// 				</label>
-// 			</div>
-// 		</div>
-// 	);
-// };
-// export default GenderCheckbox;
+export default GenderCheckbox;
