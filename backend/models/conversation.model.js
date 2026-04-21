@@ -15,9 +15,18 @@ const conversationSchema = new mongoose.Schema(
 				default: [],
 			},
 		],
+		// Last message for sidebar preview
+		lastMessage: {
+			text: { type: String, default: "" },
+			senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+			createdAt: { type: Date },
+		},
 	},
 	{ timestamps: true }
 );
+
+// Compound index for fast conversation lookup between two users
+conversationSchema.index({ participants: 1 });
 
 const Conversation = mongoose.model("Conversation", conversationSchema);
 

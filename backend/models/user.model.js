@@ -5,11 +5,14 @@ const userSchema = new mongoose.Schema(
 		fullName: {
 			type: String,
 			required: true,
+			trim: true,
 		},
 		username: {
 			type: String,
 			required: true,
 			unique: true,
+			trim: true,
+			lowercase: true,
 		},
 		password: {
 			type: String,
@@ -25,10 +28,12 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			default: "",
 		},
-		// createdAt, updatedAt => Member since <createdAt>
 	},
 	{ timestamps: true }
 );
+
+// Index for fast lookup during login/signup
+userSchema.index({ username: 1 });
 
 const User = mongoose.model("User", userSchema);
 

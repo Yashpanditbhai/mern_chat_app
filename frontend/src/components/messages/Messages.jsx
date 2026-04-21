@@ -16,7 +16,17 @@ const Messages = () => {
 	}, [messages]);
 
 	return (
-		<div className='px-4 flex-1 overflow-auto'>
+		<div className='flex-1 overflow-y-auto px-4 py-3 space-y-1'>
+			{loading && [...Array(4)].map((_, idx) => <MessageSkeleton key={idx} />)}
+
+			{!loading && messages.length === 0 && (
+				<div className='flex items-center justify-center h-full'>
+					<p className='text-slate-500 text-sm'>
+						No messages yet. Send one to start the conversation.
+					</p>
+				</div>
+			)}
+
 			{!loading &&
 				messages.length > 0 &&
 				messages.map((message) => (
@@ -24,35 +34,8 @@ const Messages = () => {
 						<Message message={message} />
 					</div>
 				))}
-
-			{loading && [...Array(3)].map((_, idx) => <MessageSkeleton key={idx} />)}
-			{!loading && messages.length === 0 && (
-				<p className='text-center'>Send a message to start the conversation</p>
-			)}
 		</div>
 	);
 };
+
 export default Messages;
-
-// STARTER CODE SNIPPET
-// import Message from "./Message";
-
-// const Messages = () => {
-// 	return (
-// 		<div className='px-4 flex-1 overflow-auto'>
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 			<Message />
-// 		</div>
-// 	);
-// };
-// export default Messages;
