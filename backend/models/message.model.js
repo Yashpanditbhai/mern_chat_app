@@ -31,6 +31,28 @@ const messageSchema = new mongoose.Schema(
 			enum: ["sent", "delivered", "seen"],
 			default: "sent",
 		},
+		// Reactions: [{ userId, emoji }]
+		reactions: [
+			{
+				userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+				emoji: { type: String },
+			},
+		],
+		// Reply to another message
+		replyTo: {
+			messageId: { type: mongoose.Schema.Types.ObjectId, ref: "Message" },
+			text: { type: String },
+			senderName: { type: String },
+		},
+		// Soft delete
+		deletedFor: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+		deletedForEveryone: { type: Boolean, default: false },
+		// Pinned
+		isPinned: { type: Boolean, default: false },
+		// Starred by users
+		starredBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+		// Disappearing message (TTL in seconds, 0 = no expiry)
+		expiresAt: { type: Date, default: null },
 	},
 	{ timestamps: true }
 );
@@ -45,6 +67,8 @@ messageSchema.pre("validate", function (next) {
 
 messageSchema.index({ senderId: 1, receiverId: 1 });
 messageSchema.index({ createdAt: -1 });
+messageSchema.index({ message: "text" });
+messageSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 const Message = mongoose.model("Message", messageSchema);
 

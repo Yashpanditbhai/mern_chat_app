@@ -19,7 +19,17 @@ const conversationSchema = new mongoose.Schema(
 		lastMessage: {
 			text: { type: String, default: "" },
 			senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+			senderName: { type: String, default: "" },
 			createdAt: { type: Date },
+		},
+		// Group chat fields
+		isGroupChat: { type: Boolean, default: false },
+		groupName: { type: String, trim: true, maxlength: 100 },
+		groupAdmin: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+		groupPic: { type: String, default: "" },
+		admins: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+		settings: {
+			onlyAdminsCanMessage: { type: Boolean, default: false },
 		},
 	},
 	{ timestamps: true }

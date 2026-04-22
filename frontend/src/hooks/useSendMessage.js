@@ -6,7 +6,7 @@ const useSendMessage = () => {
 	const [loading, setLoading] = useState(false);
 	const { selectedConversation, addMessage } = useConversation();
 
-	const sendMessage = async (message, file = null) => {
+	const sendMessage = async (message, file = null, replyToId = null) => {
 		if (!selectedConversation?._id) {
 			return toast.error("No conversation selected");
 		}
@@ -14,7 +14,6 @@ const useSendMessage = () => {
 
 		setLoading(true);
 		try {
-			// Use FormData to support file uploads
 			const formData = new FormData();
 			if (message?.trim()) {
 				formData.append("message", message);
@@ -22,11 +21,18 @@ const useSendMessage = () => {
 			if (file) {
 				formData.append("file", file);
 			}
+			if (replyToId) {
+				formData.append("replyToId", replyToId);
+			}
 
-			const res = await fetch(`/api/messages/send/${selectedConversation._id}`, {
+			const isGroup = selectedConversation?.isGroupChat;
+			const url = isGroup
+				? `/api/messages/send/group/${selectedConversation._id}`
+				: `/api/messages/send/${selectedConversation._id}`;
+
+			const res = await fetch(url, {
 				method: "POST",
 				body: formData,
-				// Don't set Content-Type — browser sets it with boundary for FormData
 			});
 
 			const data = await res.json();

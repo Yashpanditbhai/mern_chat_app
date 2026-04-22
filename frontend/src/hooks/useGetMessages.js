@@ -12,7 +12,12 @@ const useGetMessages = () => {
 		const getMessages = async () => {
 			setLoading(true);
 			try {
-				const res = await fetch(`/api/messages/${selectedConversation._id}`);
+				const isGroup = selectedConversation?.isGroupChat;
+				const url = isGroup
+					? `/api/messages/group/${selectedConversation._id}`
+					: `/api/messages/${selectedConversation._id}`;
+
+				const res = await fetch(url);
 				const data = await res.json();
 
 				if (!res.ok) throw new Error(data.error || "Failed to fetch messages");
@@ -31,7 +36,7 @@ const useGetMessages = () => {
 		return () => {
 			cancelled = true;
 		};
-	}, [selectedConversation?._id, setMessages]);
+	}, [selectedConversation?._id, setMessages, selectedConversation?.isGroupChat]);
 
 	return { messages, loading };
 };

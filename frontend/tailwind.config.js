@@ -23,6 +23,21 @@ export default {
 					error: "#EF4444",
 				},
 			},
+			{
+				flashchatlight: {
+					primary: "#3B82F6",
+					secondary: "#6366F1",
+					accent: "#10B981",
+					neutral: "#F1F5F9",
+					"base-100": "#FFFFFF",
+					"base-200": "#F1F5F9",
+					"base-300": "#E2E8F0",
+					info: "#38BDF8",
+					success: "#22C55E",
+					warning: "#F59E0B",
+					error: "#EF4444",
+				},
+			},
 		],
 	},
 };

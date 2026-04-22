@@ -45,6 +45,42 @@ const useConversation = create((set) => ({
 					: conv
 			),
 		})),
+
+	// Groups
+	groups: [],
+	setGroups: (groups) => set({ groups }),
+	updateGroupLastMessage: (groupId, lastMessage) =>
+		set((state) => ({
+			groups: state.groups.map((g) =>
+				g._id === groupId ? { ...g, lastMessage } : g
+			),
+		})),
+	updateGroup: (updatedGroup) =>
+		set((state) => ({
+			groups: state.groups.map((g) =>
+				g._id === updatedGroup._id ? { ...updatedGroup, isGroupChat: true } : g
+			),
+			selectedConversation: state.selectedConversation?._id === updatedGroup._id
+				? { ...updatedGroup, isGroupChat: true }
+				: state.selectedConversation,
+		})),
+
+	// Blocked & Muted
+	blockedUsers: [],
+	mutedUsers: [],
+	setBlockedUsers: (blockedUsers) => set({ blockedUsers }),
+	setMutedUsers: (mutedUsers) => set({ mutedUsers }),
+
+	// Polls
+	polls: [],
+	setPolls: (polls) => set({ polls }),
+	addPoll: (poll) => set((state) => ({ polls: [poll, ...state.polls] })),
+	updatePoll: (updatedPoll) =>
+		set((state) => ({
+			polls: state.polls.map((p) =>
+				p._id === updatedPoll._id ? updatedPoll : p
+			),
+		})),
 }));
 
 export default useConversation;

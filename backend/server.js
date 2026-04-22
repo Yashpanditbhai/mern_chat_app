@@ -7,6 +7,10 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import userRoutes from "./routes/user.routes.js";
+import groupRoutes from "./routes/group.routes.js";
+import miscRoutes from "./routes/misc.routes.js";
+import storyRoutes from "./routes/story.routes.js";
+import pollRoutes from "./routes/poll.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 import connectToMongoDB from "./db/connectToMongoDB.js";
@@ -49,6 +53,10 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/groups", groupRoutes);
+app.use("/api/misc", miscRoutes);
+app.use("/api/stories", storyRoutes);
+app.use("/api/polls", pollRoutes);
 
 // ─── Serve uploaded files ──────────────────────────────────────
 app.use("/uploads", express.static(path.join(__dirname, "backend/uploads")));

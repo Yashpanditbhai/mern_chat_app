@@ -4,6 +4,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import Message from "../models/message.model.js";
+import User from "../models/user.model.js";
 
 // Load env vars BEFORE anything that needs them
 dotenv.config();
@@ -107,10 +108,17 @@ io.on("connection", (socket) => {
 	});
 
 	// ─── Disconnect ───────────────────────────────────────────
-	socket.on("disconnect", () => {
+	socket.on("disconnect", async () => {
 		console.log(`User disconnected: ${userId}`);
 		delete userSocketMap[userId];
 		io.emit("getOnlineUsers", Object.keys(userSocketMap));
+
+		// Update lastSeen
+		try {
+			await User.findByIdAndUpdate(userId, { lastSeen: new Date() });
+		} catch (error) {
+			console.error("Error updating lastSeen:", error.message);
+		}
 	});
 });
 

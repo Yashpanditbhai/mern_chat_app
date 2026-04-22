@@ -28,6 +28,27 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			default: "",
 		},
+		statusText: {
+			type: String,
+			default: "",
+			maxlength: 150,
+		},
+		lastSeen: {
+			type: Date,
+			default: null,
+		},
+		blockedUsers: [
+			{
+				type: mongoose.Schema.Types.ObjectId,
+				ref: "User",
+			},
+		],
+		mutedUsers: [
+			{
+				type: mongoose.Schema.Types.ObjectId,
+				ref: "User",
+			},
+		],
 	},
 	{ timestamps: true }
 );

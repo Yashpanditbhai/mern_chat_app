@@ -12,6 +12,8 @@ const ALLOWED_TYPES = {
 	"audio/mpeg": "audio",
 	"audio/wav": "audio",
 	"audio/ogg": "audio",
+	"audio/webm": "audio",
+	"audio/mp4": "audio",
 	"application/pdf": "document",
 	"application/msword": "document",
 	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": "document",
