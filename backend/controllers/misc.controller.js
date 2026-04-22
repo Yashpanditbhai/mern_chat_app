@@ -38,6 +38,93 @@ function formatGifs(gifs) {
 	}));
 }
 
+// ─── AI Chatbot ────────────────────────────────────────────────
+export const aiChat = async (req, res) => {
+	try {
+		const { message } = req.body;
+		if (!message?.trim()) {
+			return res.status(400).json({ error: "Message is required" });
+		}
+
+		const input = message.trim().toLowerCase();
+		let response;
+
+		// Greetings
+		if (/^(hi|hello|hey|howdy|hola|yo|sup)\b/.test(input)) {
+			const greetings = [
+				"Hey there! How can I help you today?",
+				"Hello! Welcome to Flash Chat. What can I do for you?",
+				"Hi! I'm your Flash Chat assistant. Ask me anything about the app!",
+				"Hey! Great to see you. Need help with anything?",
+			];
+			response = greetings[Math.floor(Math.random() * greetings.length)];
+		}
+		// Help
+		else if (/\b(help|features|what can you do|commands)\b/.test(input)) {
+			response = "Here are some things Flash Chat can do:\n\n" +
+				"- Send text messages, images, videos & documents\n" +
+				"- Voice messages & camera capture\n" +
+				"- GIF search & emoji picker\n" +
+				"- Group chats with admin controls\n" +
+				"- Message reactions, replies & forwarding\n" +
+				"- Pin & star important messages\n" +
+				"- Audio & video calls (WebRTC)\n" +
+				"- Stories (like social media)\n" +
+				"- Polls in group chats\n" +
+				"- Schedule messages for later\n" +
+				"- Export chat history\n" +
+				"- Drag & drop file sharing\n" +
+				"- Shared media viewer\n" +
+				"- Multi-language support (EN, HI, ES)\n" +
+				"- Dark/light themes & wallpapers\n\n" +
+				"Ask me about any specific feature!";
+		}
+		// About the app
+		else if (/\b(about|what is|what's this|flash chat)\b/.test(input)) {
+			response = "Flash Chat is a full-featured real-time messaging application built with the MERN stack (MongoDB, Express, React, Node.js). It uses Socket.IO for real-time communication and supports file sharing, video calls, and much more!";
+		}
+		// How to send messages
+		else if (/\b(how.*(send|message|chat))\b/.test(input)) {
+			response = "To send a message, select a conversation from the sidebar and type in the message input at the bottom. You can also attach files, send voice messages, GIFs, and take photos with the camera!";
+		}
+		// Groups
+		else if (/\b(group|create group)\b/.test(input)) {
+			response = "To create a group, click the '+' button in the sidebar header. You can add members, set a group name, and manage admin settings. Group admins can control who can send messages.";
+		}
+		// Calls
+		else if (/\b(call|video|audio|ring)\b/.test(input)) {
+			response = "You can make audio and video calls by clicking the phone or camera icons in the chat header. Calls use WebRTC for peer-to-peer connections. Screen sharing is also supported during video calls!";
+		}
+		// Fun responses
+		else if (/\b(joke|funny|laugh)\b/.test(input)) {
+			const jokes = [
+				"Why do programmers prefer dark mode? Because light attracts bugs!",
+				"There are only 10 types of people: those who understand binary and those who don't.",
+				"A SQL query walks into a bar, sees two tables, and asks 'Can I JOIN you?'",
+			];
+			response = jokes[Math.floor(Math.random() * jokes.length)];
+		}
+		else if (/\b(thanks|thank you|thx)\b/.test(input)) {
+			response = "You're welcome! Let me know if there's anything else I can help with.";
+		}
+		else if (/\b(bye|goodbye|see you|cya)\b/.test(input)) {
+			response = "Goodbye! Have a great day! Come back anytime you need help.";
+		}
+		else if (/\b(who are you|your name|what are you)\b/.test(input)) {
+			response = "I'm Flash Bot, your friendly Flash Chat assistant! I can help you learn about the app's features and answer your questions.";
+		}
+		// Fallback
+		else {
+			response = "I'm a simple assistant bot for Flash Chat. Try asking me about the app's features, how to send messages, create groups, make calls, or just say 'help' to see everything I can tell you about!";
+		}
+
+		res.json({ response });
+	} catch (error) {
+		console.error("AI chat error:", error.message);
+		res.status(500).json({ error: "Failed to generate response" });
+	}
+};
+
 // ─── Link Preview ──────────────────────────────────────────────
 export const getLinkPreview = async (req, res) => {
 	try {

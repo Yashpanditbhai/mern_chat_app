@@ -12,6 +12,7 @@ import miscRoutes from "./routes/misc.routes.js";
 import storyRoutes from "./routes/story.routes.js";
 import pollRoutes from "./routes/poll.routes.js";
 import errorHandler from "./middleware/errorHandler.js";
+import { processDueScheduledMessages } from "./controllers/schedule.controller.js";
 
 import connectToMongoDB from "./db/connectToMongoDB.js";
 import { app, server } from "./socket/socket.js";
@@ -74,6 +75,10 @@ app.use(errorHandler);
 async function start() {
 	try {
 		await connectToMongoDB();
+
+		// Process scheduled messages every 30 seconds
+		setInterval(processDueScheduledMessages, 30000);
+
 		server.listen(PORT, () => {
 			console.log(`Server running on port ${PORT}`);
 		});

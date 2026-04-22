@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import useConversation from "../../zustand/useConversation";
 import MessageInput from "./MessageInput";
 import Messages from "./Messages";
@@ -8,8 +8,12 @@ import SearchPanel from "./SearchPanel";
 import StarredPanel from "./StarredPanel";
 import PollsList from "./PollsList";
 import CreatePollModal from "./CreatePollModal";
+import ExportChatModal from "./ExportChatModal";
+import ScheduledMessagesPanel from "./ScheduledMessagesPanel";
+import SharedMediaPanel from "./SharedMediaPanel";
+import AIChatPanel from "./AIChatPanel";
 import { BsChatDotsFill } from "react-icons/bs";
-import { IoPeople, IoSearch, IoStar, IoEllipsisVertical, IoBan, IoVolumeOff, IoVolumeMedium, IoBarChart, IoCall, IoVideocam, IoLockClosed, IoInformationCircle, IoClose } from "react-icons/io5";
+import { IoPeople, IoSearch, IoStar, IoEllipsisVertical, IoBan, IoVolumeOff, IoVolumeMedium, IoBarChart, IoCall, IoVideocam, IoLockClosed, IoInformationCircle, IoClose, IoDownload, IoTime, IoImages, IoCloudUpload } from "react-icons/io5";
 import { useAuthContext } from "../../context/AuthContext";
 import { useSocketContext } from "../../context/SocketContext";
 import { useCallContext } from "../../context/CallContext";
@@ -33,6 +37,11 @@ const MessageContainer = () => {
 	const [showPolls, setShowPolls] = useState(false);
 	const [showCreatePoll, setShowCreatePoll] = useState(false);
 	const [showSecurityInfo, setShowSecurityInfo] = useState(false);
+	const [showExport, setShowExport] = useState(false);
+	const [showScheduled, setShowScheduled] = useState(false);
+	const [showMedia, setShowMedia] = useState(false);
+	const [isDragOver, setIsDragOver] = useState(false);
+	const [droppedFile, setDroppedFile] = useState(null);
 
 	const isGroup = selectedConversation?.isGroupChat;
 	const isOnline = !isGroup && selectedConversation
@@ -91,6 +100,47 @@ const MessageContainer = () => {
 		setShowMenu(false);
 	};
 
+	// ─── Drag & Drop Handlers ─────────────────────────────
+	const handleDragOver = useCallback((e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(true);
+	}, []);
+
+	const handleDragEnter = useCallback((e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(true);
+	}, []);
+
+	const handleDragLeave = useCallback((e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		// Only set false if leaving the container
+		if (e.currentTarget && !e.currentTarget.contains(e.relatedTarget)) {
+			setIsDragOver(false);
+		}
+	}, []);
+
+	const handleDrop = useCallback((e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		setIsDragOver(false);
+
+		const file = e.dataTransfer?.files?.[0];
+		if (file) {
+			if (file.size > 10 * 1024 * 1024) {
+				toast.error("File too large. Maximum size is 10MB.");
+				return;
+			}
+			setDroppedFile(file);
+		}
+	}, []);
+
+	const clearDroppedFile = useCallback(() => {
+		setDroppedFile(null);
+	}, []);
+
 	const handleMute = async () => {
 		try {
 			const res = await fetch(`/api/users/mute/${selectedConversation._id}`, { method: "PUT" });
@@ -121,9 +171,28 @@ const MessageContainer = () => {
 	};
 
 	return (
-		<div className='flex-1 flex flex-col h-full bg-base-100'>
+		<div
+			className='flex-1 flex flex-col h-full bg-base-100 relative'
+			onDragOver={selectedConversation ? handleDragOver : undefined}
+			onDragEnter={selectedConversation ? handleDragEnter : undefined}
+			onDragLeave={selectedConversation ? handleDragLeave : undefined}
+			onDrop={selectedConversation ? handleDrop : undefined}
+		>
+			{/* Drag & Drop Overlay */}
+			{isDragOver && selectedConversation && (
+				<div className='absolute inset-0 z-40 bg-base-100/90 flex items-center justify-center pointer-events-none'>
+					<div className='flex flex-col items-center gap-3 p-8 border-2 border-dashed border-primary rounded-2xl'>
+						<IoCloudUpload className='w-12 h-12 text-primary animate-bounce' />
+						<p className='text-lg font-semibold text-white'>{t("dropFilesHere")}</p>
+						<p className='text-sm text-slate-400'>{t("dropFilesDesc")}</p>
+					</div>
+				</div>
+			)}
+
 			{!selectedConversation ? (
 				<NoChatSelected />
+			) : selectedConversation.isAI ? (
+				<AIChatPanel isOpen={true} onClose={() => setSelectedConversation(null)} />
 			) : (
 				<>
 					{/* Chat Header */}
@@ -240,6 +309,13 @@ const MessageContainer = () => {
 							>
 								<IoStar className='w-4 h-4' />
 							</button>
+							<button
+								onClick={() => setShowMedia(true)}
+								className='p-2 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-base-300 transition-colors'
+								title={t("sharedMedia")}
+							>
+								<IoImages className='w-4 h-4' />
+							</button>
 							{!isGroup && (
 								<div className='relative'>
 									<button
@@ -250,7 +326,21 @@ const MessageContainer = () => {
 										<IoEllipsisVertical className='w-4 h-4' />
 									</button>
 									{showMenu && (
-										<div className='absolute right-0 top-full mt-1 bg-base-300 rounded-xl shadow-lg z-20 min-w-[160px] py-1 overflow-hidden'>
+										<div className='absolute right-0 top-full mt-1 bg-base-300 rounded-xl shadow-lg z-20 min-w-[180px] py-1 overflow-hidden'>
+											<button
+												onClick={() => { setShowExport(true); setShowMenu(false); }}
+												className='w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-300 hover:bg-base-100 transition-colors'
+											>
+												<IoDownload className='w-4 h-4' />
+												{t("exportChat")}
+											</button>
+											<button
+												onClick={() => { setShowScheduled(true); setShowMenu(false); }}
+												className='w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-300 hover:bg-base-100 transition-colors'
+											>
+												<IoTime className='w-4 h-4' />
+												{t("scheduledMessages")}
+											</button>
 											<button
 												onClick={handleBlock}
 												className='w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-300 hover:bg-base-100 transition-colors'
@@ -295,6 +385,8 @@ const MessageContainer = () => {
 							replyingTo={replyingTo}
 							onCancelReply={() => setReplyingTo(null)}
 							onCreatePoll={isGroup ? () => setShowCreatePoll(true) : undefined}
+							droppedFile={droppedFile}
+							onClearDroppedFile={clearDroppedFile}
 						/>
 					)}
 
@@ -344,6 +436,24 @@ const MessageContainer = () => {
 							conversationId={selectedConversation._id}
 						/>
 					)}
+
+					{/* Export Chat Modal */}
+					<ExportChatModal
+						isOpen={showExport}
+						onClose={() => setShowExport(false)}
+					/>
+
+					{/* Scheduled Messages Panel */}
+					<ScheduledMessagesPanel
+						isOpen={showScheduled}
+						onClose={() => setShowScheduled(false)}
+					/>
+
+					{/* Shared Media Panel */}
+					<SharedMediaPanel
+						isOpen={showMedia}
+						onClose={() => setShowMedia(false)}
+					/>
 
 					{/* Security Info Modal */}
 					{showSecurityInfo && (

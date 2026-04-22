@@ -96,6 +96,41 @@ const translations = {
 
 		// Notifications
 		newMessage: "New Message",
+
+		// Export
+		exportChat: "Export Chat",
+		exportAsText: "Export as Text",
+		exportAsPDF: "Export as PDF",
+		exportTextDesc: "Download as .txt file",
+		exportPDFDesc: "Print or save as PDF",
+		messages: "messages",
+
+		// Schedule
+		scheduleMessage: "Schedule Message",
+		scheduledMessages: "Scheduled Messages",
+		scheduleDesc: "Choose when to send this message",
+		schedule: "Schedule",
+		noScheduledMessages: "No scheduled messages",
+		scheduleCancelled: "Scheduled message cancelled",
+		to: "To",
+
+		// AI
+		aiAssistant: "AI Assistant",
+		askAI: "Ask me anything...",
+		askAnything: "Ask me anything",
+
+		// Media
+		sharedMedia: "Shared Media",
+		images: "Images",
+		videos: "Videos",
+		audio: "Audio",
+		documents: "Documents",
+		noMedia: "No media shared yet",
+		download: "Download",
+
+		// Drag & Drop
+		dropFilesHere: "Drop files here to send",
+		dropFilesDesc: "Release to attach the file",
 	},
 	hi: {
 		welcomeBack: "वापस स्वागत है",
@@ -187,6 +222,32 @@ const translations = {
 		screenSharing: "स्क्रीन शेयरिंग",
 
 		newMessage: "नया संदेश",
+
+		exportChat: "चैट निर्यात करें",
+		exportAsText: "टेक्स्ट के रूप में निर्यात करें",
+		exportAsPDF: "PDF के रूप में निर्यात करें",
+		exportTextDesc: ".txt फ़ाइल डाउनलोड करें",
+		exportPDFDesc: "प्रिंट या PDF के रूप में सहेजें",
+		messages: "संदेश",
+		scheduleMessage: "संदेश शेड्यूल करें",
+		scheduledMessages: "शेड्यूल किए गए संदेश",
+		scheduleDesc: "यह संदेश कब भेजना है चुनें",
+		schedule: "शेड्यूल",
+		noScheduledMessages: "कोई शेड्यूल किया गया संदेश नहीं",
+		scheduleCancelled: "शेड्यूल किया गया संदेश रद्द",
+		to: "को",
+		aiAssistant: "AI सहायक",
+		askAI: "मुझसे कुछ भी पूछें...",
+		askAnything: "कुछ भी पूछें",
+		sharedMedia: "साझा मीडिया",
+		images: "चित्र",
+		videos: "वीडियो",
+		audio: "ऑडियो",
+		documents: "दस्तावेज़",
+		noMedia: "अभी तक कोई मीडिया साझा नहीं",
+		download: "डाउनलोड",
+		dropFilesHere: "भेजने के लिए फ़ाइलें यहाँ छोड़ें",
+		dropFilesDesc: "फ़ाइल अटैच करने के लिए छोड़ें",
 	},
 	es: {
 		welcomeBack: "Bienvenido de nuevo",
@@ -278,6 +339,32 @@ const translations = {
 		screenSharing: "Compartiendo pantalla",
 
 		newMessage: "Nuevo mensaje",
+
+		exportChat: "Exportar chat",
+		exportAsText: "Exportar como texto",
+		exportAsPDF: "Exportar como PDF",
+		exportTextDesc: "Descargar como archivo .txt",
+		exportPDFDesc: "Imprimir o guardar como PDF",
+		messages: "mensajes",
+		scheduleMessage: "Programar mensaje",
+		scheduledMessages: "Mensajes programados",
+		scheduleDesc: "Elige cuando enviar este mensaje",
+		schedule: "Programar",
+		noScheduledMessages: "No hay mensajes programados",
+		scheduleCancelled: "Mensaje programado cancelado",
+		to: "Para",
+		aiAssistant: "Asistente IA",
+		askAI: "Preguntame lo que quieras...",
+		askAnything: "Pregunta lo que quieras",
+		sharedMedia: "Medios compartidos",
+		images: "Imagenes",
+		videos: "Videos",
+		audio: "Audio",
+		documents: "Documentos",
+		noMedia: "No hay medios compartidos aun",
+		download: "Descargar",
+		dropFilesHere: "Suelta archivos aqui para enviar",
+		dropFilesDesc: "Suelta para adjuntar el archivo",
 	},
 };
 

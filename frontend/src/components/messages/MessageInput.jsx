@@ -1,21 +1,23 @@
 import { useState, useRef, useEffect } from "react";
 import { BsSend } from "react-icons/bs";
 import { BsEmojiSmile } from "react-icons/bs";
-import { IoAttach, IoClose, IoImage, IoMic, IoCamera, IoBarChart } from "react-icons/io5";
+import { IoAttach, IoClose, IoImage, IoMic, IoCamera, IoBarChart, IoTime } from "react-icons/io5";
 import { HiGif } from "react-icons/hi2";
 import { IoBrush } from "react-icons/io5";
 import EmojiPicker from "emoji-picker-react";
 import GifPicker from "./GifPicker";
 import CameraCapture from "./CameraCapture";
 import ImageEditor from "./ImageEditor";
+import ScheduleMessageModal from "./ScheduleMessageModal";
 import useSendMessage from "../../hooks/useSendMessage";
 import useConversation from "../../zustand/useConversation";
 import useTypingIndicator from "../../hooks/useTypingIndicator";
 import { useLanguage } from "../../context/LanguageContext";
+import toast from "react-hot-toast";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-const MessageInput = ({ replyingTo, onCancelReply, onCreatePoll }) => {
+const MessageInput = ({ replyingTo, onCancelReply, onCreatePoll, droppedFile, onClearDroppedFile }) => {
 	const { t } = useLanguage();
 	const [message, setMessage] = useState("");
 	const [selectedFile, setSelectedFile] = useState(null);
@@ -26,6 +28,7 @@ const MessageInput = ({ replyingTo, onCancelReply, onCreatePoll }) => {
 	const [showImageEditor, setShowImageEditor] = useState(false);
 	const [isRecording, setIsRecording] = useState(false);
 	const [recordingDuration, setRecordingDuration] = useState(0);
+	const [showSchedule, setShowSchedule] = useState(false);
 	const fileInputRef = useRef(null);
 	const imageInputRef = useRef(null);
 	const inputRef = useRef(null);
@@ -38,6 +41,46 @@ const MessageInput = ({ replyingTo, onCancelReply, onCreatePoll }) => {
 	const { loading, sendMessage } = useSendMessage();
 	const { selectedConversation } = useConversation();
 	const { handleTyping, stopTyping } = useTypingIndicator(selectedConversation?._id);
+
+	// Handle dropped file from drag & drop
+	useEffect(() => {
+		if (droppedFile) {
+			setSelectedFile(droppedFile);
+			if (droppedFile.type.startsWith("image/")) {
+				const reader = new FileReader();
+				reader.onload = (e) => setFilePreview(e.target.result);
+				reader.readAsDataURL(droppedFile);
+			} else {
+				setFilePreview(null);
+			}
+			onClearDroppedFile?.();
+		}
+	}, [droppedFile, onClearDroppedFile]);
+
+	const handleScheduleMessage = async (scheduledAt) => {
+		if (!message.trim()) {
+			toast.error("Please type a message to schedule");
+			return;
+		}
+		try {
+			const res = await fetch("/api/messages/schedule", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					message: message.trim(),
+					receiverId: selectedConversation._id,
+					scheduledAt,
+					isGroupChat: !!selectedConversation.isGroupChat,
+				}),
+			});
+			const data = await res.json();
+			if (!res.ok) throw new Error(data.error);
+			toast.success("Message scheduled!");
+			setMessage("");
+		} catch (error) {
+			toast.error(error.message);
+		}
+	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -368,6 +411,16 @@ const MessageInput = ({ replyingTo, onCancelReply, onCreatePoll }) => {
 							<IoAttach className='w-5 h-5' />
 						</button>
 
+						{/* Schedule button */}
+						<button
+							type='button'
+							onClick={() => setShowSchedule(true)}
+							className='p-2 rounded-xl text-slate-400 hover:text-primary hover:bg-base-300 transition-colors flex-shrink-0'
+							title='Schedule message'
+						>
+							<IoTime className='w-5 h-5' />
+						</button>
+
 						{/* Poll button (groups only) */}
 						{onCreatePoll && (
 							<button
@@ -435,6 +488,13 @@ const MessageInput = ({ replyingTo, onCancelReply, onCreatePoll }) => {
 				onClose={() => setShowImageEditor(false)}
 				imageFile={selectedFile}
 				onSave={handleImageEditorSave}
+			/>
+
+			{/* Schedule Message Modal */}
+			<ScheduleMessageModal
+				isOpen={showSchedule}
+				onClose={() => setShowSchedule(false)}
+				onSchedule={handleScheduleMessage}
 			/>
 		</div>
 	);

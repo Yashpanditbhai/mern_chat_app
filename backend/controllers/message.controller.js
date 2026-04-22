@@ -529,6 +529,51 @@ export const getStarredMessages = async (req, res) => {
 	}
 };
 
+// ─── Get shared media between two users ────────────────────────
+export const getSharedMedia = async (req, res) => {
+	try {
+		const { userId } = req.params;
+		const currentUserId = req.user._id;
+
+		const messages = await Message.find({
+			$or: [
+				{ senderId: currentUserId, receiverId: userId },
+				{ senderId: userId, receiverId: currentUserId },
+			],
+			"file.url": { $exists: true, $ne: null },
+			deletedForEveryone: { $ne: true },
+		})
+			.sort({ createdAt: -1 })
+			.select("file createdAt senderId")
+			.populate("senderId", "fullName")
+			.limit(200);
+
+		const grouped = { images: [], videos: [], audio: [], documents: [] };
+		for (const msg of messages) {
+			const item = {
+				_id: msg._id,
+				url: msg.file.url,
+				name: msg.file.name,
+				type: msg.file.type,
+				mimeType: msg.file.mimeType,
+				size: msg.file.size,
+				createdAt: msg.createdAt,
+				senderName: msg.senderId?.fullName || "Unknown",
+			};
+			const category = msg.file.type === "image" ? "images"
+				: msg.file.type === "video" ? "videos"
+				: msg.file.type === "audio" ? "audio"
+				: "documents";
+			grouped[category].push(item);
+		}
+
+		res.status(200).json(grouped);
+	} catch (error) {
+		console.error("Error in getSharedMedia:", error.message);
+		res.status(500).json({ error: "Internal server error" });
+	}
+};
+
 // ─── Search messages ───────────────────────────────────────────
 export const searchMessages = async (req, res) => {
 	try {
