@@ -11,7 +11,7 @@ export const useSocketContext = () => {
 	return useContext(SocketContext);
 };
 
-const SOCKET_URL = "http://localhost:5001";
+const SOCKET_URL = import.meta.env.MODE === "development" ? "http://localhost:5002" : "";
 
 export const SocketContextProvider = ({ children }) => {
 	const [socket, setSocket] = useState(null);
@@ -43,6 +43,7 @@ export const SocketContextProvider = ({ children }) => {
 			auth: {
 				token: authUser.token,
 			},
+			transports: ["websocket", "polling"],
 			reconnection: true,
 			reconnectionAttempts: 10,
 			reconnectionDelay: 1000,

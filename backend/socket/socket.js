@@ -11,9 +11,21 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = [
+	"http://localhost:3000",
+	process.env.CLIENT_URL,
+].filter(Boolean);
+
 const io = new Server(server, {
 	cors: {
-		origin: [process.env.CLIENT_URL || "http://localhost:3000"],
+		origin: (origin, callback) => {
+			// Allow same-origin requests (no origin header) or whitelisted origins
+			if (!origin || allowedOrigins.includes(origin)) {
+				callback(null, true);
+			} else {
+				callback(new Error("Not allowed by CORS"));
+			}
+		},
 		methods: ["GET", "POST"],
 		credentials: true,
 	},
