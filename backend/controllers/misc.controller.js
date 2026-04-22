@@ -1,4 +1,13 @@
 import fetch from "node-fetch";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// ─── Gemini AI Setup ──────────────────────────────────────────
+let geminiModel = null;
+if (process.env.GEMINI_API_KEY) {
+	const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+	geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+	console.log("Gemini AI initialized");
+}
 
 // ─── GIF Search via Giphy ──────────────────────────────────────
 const GIPHY_API_KEY = process.env.GIPHY_API_KEY || "GlVGYHkr3WSBnllca54iNt0yFbjz7L65"; // Free public beta key
@@ -38,84 +47,67 @@ function formatGifs(gifs) {
 	}));
 }
 
-// ─── AI Chatbot ────────────────────────────────────────────────
+// ─── AI Chatbot (Gemini-powered with fallback) ────────────────
+const SYSTEM_PROMPT = `You are Flash Bot, a friendly AI assistant built into Flash Chat — a full-featured real-time messaging app. You help users with questions about the app and general conversation.
+
+Flash Chat features: text/image/video/audio messaging, voice messages, GIF search, emoji picker, group chats with admin controls, message reactions/replies/forwarding, pinned & starred messages, audio/video calls (WebRTC), screen sharing, 24h stories, polls in groups, scheduled messages, chat export, drag & drop file sharing, shared media viewer, multi-language support (English, Hindi, Spanish), dark/light themes, chat wallpapers, AI chatbot (you!), and more.
+
+Keep responses concise (2-3 sentences max unless the user asks for details). Be friendly and helpful. You can answer general knowledge questions too, not just app-related ones.`;
+
+// Conversation history per user (in-memory, limited)
+const chatHistory = new Map();
+const MAX_HISTORY = 20;
+
 export const aiChat = async (req, res) => {
 	try {
 		const { message } = req.body;
+		const userId = req.user._id.toString();
+
 		if (!message?.trim()) {
 			return res.status(400).json({ error: "Message is required" });
 		}
 
-		const input = message.trim().toLowerCase();
 		let response;
 
-		// Greetings
-		if (/^(hi|hello|hey|howdy|hola|yo|sup)\b/.test(input)) {
-			const greetings = [
-				"Hey there! How can I help you today?",
-				"Hello! Welcome to Flash Chat. What can I do for you?",
-				"Hi! I'm your Flash Chat assistant. Ask me anything about the app!",
-				"Hey! Great to see you. Need help with anything?",
-			];
-			response = greetings[Math.floor(Math.random() * greetings.length)];
+		if (geminiModel) {
+			// Use Gemini AI
+			try {
+				// Get or create chat history for this user
+				if (!chatHistory.has(userId)) {
+					chatHistory.set(userId, []);
+				}
+				const history = chatHistory.get(userId);
+
+				// Build conversation for Gemini
+				const chat = geminiModel.startChat({
+					history: [
+						{ role: "user", parts: [{ text: "System instruction: " + SYSTEM_PROMPT }] },
+						{ role: "model", parts: [{ text: "Understood! I'm Flash Bot, ready to help with Flash Chat and anything else." }] },
+						...history,
+					],
+				});
+
+				const result = await chat.sendMessage(message.trim());
+				response = result.response.text();
+
+				// Store in history (keep limited)
+				history.push(
+					{ role: "user", parts: [{ text: message.trim() }] },
+					{ role: "model", parts: [{ text: response }] }
+				);
+				if (history.length > MAX_HISTORY * 2) {
+					history.splice(0, 2); // Remove oldest pair
+				}
+			} catch (aiError) {
+				console.error("Gemini API error:", aiError.message);
+				// Fall through to fallback
+				response = null;
+			}
 		}
-		// Help
-		else if (/\b(help|features|what can you do|commands)\b/.test(input)) {
-			response = "Here are some things Flash Chat can do:\n\n" +
-				"- Send text messages, images, videos & documents\n" +
-				"- Voice messages & camera capture\n" +
-				"- GIF search & emoji picker\n" +
-				"- Group chats with admin controls\n" +
-				"- Message reactions, replies & forwarding\n" +
-				"- Pin & star important messages\n" +
-				"- Audio & video calls (WebRTC)\n" +
-				"- Stories (like social media)\n" +
-				"- Polls in group chats\n" +
-				"- Schedule messages for later\n" +
-				"- Export chat history\n" +
-				"- Drag & drop file sharing\n" +
-				"- Shared media viewer\n" +
-				"- Multi-language support (EN, HI, ES)\n" +
-				"- Dark/light themes & wallpapers\n\n" +
-				"Ask me about any specific feature!";
-		}
-		// About the app
-		else if (/\b(about|what is|what's this|flash chat)\b/.test(input)) {
-			response = "Flash Chat is a full-featured real-time messaging application built with the MERN stack (MongoDB, Express, React, Node.js). It uses Socket.IO for real-time communication and supports file sharing, video calls, and much more!";
-		}
-		// How to send messages
-		else if (/\b(how.*(send|message|chat))\b/.test(input)) {
-			response = "To send a message, select a conversation from the sidebar and type in the message input at the bottom. You can also attach files, send voice messages, GIFs, and take photos with the camera!";
-		}
-		// Groups
-		else if (/\b(group|create group)\b/.test(input)) {
-			response = "To create a group, click the '+' button in the sidebar header. You can add members, set a group name, and manage admin settings. Group admins can control who can send messages.";
-		}
-		// Calls
-		else if (/\b(call|video|audio|ring)\b/.test(input)) {
-			response = "You can make audio and video calls by clicking the phone or camera icons in the chat header. Calls use WebRTC for peer-to-peer connections. Screen sharing is also supported during video calls!";
-		}
-		// Fun responses
-		else if (/\b(joke|funny|laugh)\b/.test(input)) {
-			const jokes = [
-				"Why do programmers prefer dark mode? Because light attracts bugs!",
-				"There are only 10 types of people: those who understand binary and those who don't.",
-				"A SQL query walks into a bar, sees two tables, and asks 'Can I JOIN you?'",
-			];
-			response = jokes[Math.floor(Math.random() * jokes.length)];
-		}
-		else if (/\b(thanks|thank you|thx)\b/.test(input)) {
-			response = "You're welcome! Let me know if there's anything else I can help with.";
-		}
-		else if (/\b(bye|goodbye|see you|cya)\b/.test(input)) {
-			response = "Goodbye! Have a great day! Come back anytime you need help.";
-		}
-		else if (/\b(who are you|your name|what are you)\b/.test(input)) {
-			response = "I'm Flash Bot, your friendly Flash Chat assistant! I can help you learn about the app's features and answer your questions.";
-		}
-		// Fallback
-		else {
-			response = "I'm a simple assistant bot for Flash Chat. Try asking me about the app's features, how to send messages, create groups, make calls, or just say 'help' to see everything I can tell you about!";
+
+		// Fallback if no API key or Gemini fails
+		if (!response) {
+			response = getFallbackResponse(message.trim().toLowerCase());
 		}
 
 		res.json({ response });
@@ -124,6 +116,30 @@ export const aiChat = async (req, res) => {
 		res.status(500).json({ error: "Failed to generate response" });
 	}
 };
+
+// Clear chat history endpoint
+export const clearAiChat = async (req, res) => {
+	const userId = req.user._id.toString();
+	chatHistory.delete(userId);
+	res.json({ message: "Chat history cleared" });
+};
+
+function getFallbackResponse(input) {
+	if (/^(hi|hello|hey|howdy|hola|yo|sup)\b/.test(input)) {
+		const g = ["Hey there! How can I help you today?", "Hello! Welcome to Flash Chat!", "Hi! Ask me anything about the app!"];
+		return g[Math.floor(Math.random() * g.length)];
+	}
+	if (/\b(help|features|what can you do)\b/.test(input)) {
+		return "Flash Chat features: messaging, voice messages, GIFs, group chats, video/audio calls, stories, polls, scheduled messages, chat export, file sharing, themes, multi-language support, and more! Ask about any specific feature.";
+	}
+	if (/\b(joke|funny)\b/.test(input)) {
+		const j = ["Why do programmers prefer dark mode? Because light attracts bugs!", "A SQL query walks into a bar, sees two tables, and asks 'Can I JOIN you?'"];
+		return j[Math.floor(Math.random() * j.length)];
+	}
+	if (/\b(thanks|thank you)\b/.test(input)) return "You're welcome!";
+	if (/\b(bye|goodbye)\b/.test(input)) return "Goodbye! Have a great day!";
+	return "I'm Flash Bot — your chat assistant. For smarter AI responses, ask the admin to add a GEMINI_API_KEY. Try 'help' to see app features!";
+}
 
 // ─── Link Preview ──────────────────────────────────────────────
 export const getLinkPreview = async (req, res) => {
