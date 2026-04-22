@@ -1,19 +1,34 @@
 import { useState, useRef, useEffect } from "react";
 import { BsSend, BsRobot } from "react-icons/bs";
-import { IoClose } from "react-icons/io5";
+import { IoClose, IoTrash } from "react-icons/io5";
 import { useAuthContext } from "../../context/AuthContext";
 import { useLanguage } from "../../context/LanguageContext";
+
+const STORAGE_KEY = "flash-chat-ai-history";
+const DEFAULT_MSG = { role: "bot", text: "Hi! I'm Flash Bot, your assistant. Ask me about Flash Chat features or just say hello!" };
 
 const AIChatPanel = ({ isOpen, onClose }) => {
 	const { authUser } = useAuthContext();
 	const { t } = useLanguage();
-	const [messages, setMessages] = useState([
-		{ role: "bot", text: "Hi! I'm Flash Bot, your assistant. Ask me about Flash Chat features or just say hello!" },
-	]);
+	const [messages, setMessages] = useState(() => {
+		try {
+			const saved = localStorage.getItem(STORAGE_KEY);
+			if (saved) {
+				const parsed = JSON.parse(saved);
+				if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+			}
+		} catch {}
+		return [DEFAULT_MSG];
+	});
 	const [input, setInput] = useState("");
 	const [loading, setLoading] = useState(false);
 	const messagesEndRef = useRef(null);
 	const inputRef = useRef(null);
+
+	// Save to localStorage whenever messages change
+	useEffect(() => {
+		localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+	}, [messages]);
 
 	useEffect(() => {
 		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,6 +63,15 @@ const AIChatPanel = ({ isOpen, onClose }) => {
 		}
 	};
 
+	const handleClearHistory = async () => {
+		setMessages([DEFAULT_MSG]);
+		localStorage.removeItem(STORAGE_KEY);
+		// Also clear server-side history
+		try {
+			await fetch("/api/misc/ai-chat/clear", { method: "POST" });
+		} catch {}
+	};
+
 	if (!isOpen) return null;
 
 	return (
@@ -61,6 +85,13 @@ const AIChatPanel = ({ isOpen, onClose }) => {
 					<h3 className='font-semibold text-white text-sm'>{t("aiAssistant")}</h3>
 					<p className='text-xs text-green-400'>{t("online")}</p>
 				</div>
+				<button
+					onClick={handleClearHistory}
+					className='p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-base-300 transition-colors'
+					title='Clear chat history'
+				>
+					<IoTrash className='w-4 h-4' />
+				</button>
 				<button
 					onClick={onClose}
 					className='p-2 rounded-lg text-slate-400 hover:text-white hover:bg-base-300 transition-colors'
