@@ -11,10 +11,12 @@ import ImageEditor from "./ImageEditor";
 import useSendMessage from "../../hooks/useSendMessage";
 import useConversation from "../../zustand/useConversation";
 import useTypingIndicator from "../../hooks/useTypingIndicator";
+import { useLanguage } from "../../context/LanguageContext";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 const MessageInput = ({ replyingTo, onCancelReply, onCreatePoll }) => {
+	const { t } = useLanguage();
 	const [message, setMessage] = useState("");
 	const [selectedFile, setSelectedFile] = useState(null);
 	const [filePreview, setFilePreview] = useState(null);
@@ -387,7 +389,7 @@ const MessageInput = ({ replyingTo, onCancelReply, onCreatePoll }) => {
 							ref={inputRef}
 							type='text'
 							className='flex-1 px-4 py-3 rounded-xl bg-base-300 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary transition-colors'
-							placeholder='Type a message...'
+							placeholder={t("typeMessage")}
 							value={message}
 							onChange={handleChange}
 							maxLength={5000}

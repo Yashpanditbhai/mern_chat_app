@@ -3,6 +3,7 @@ import { useAuthContext } from "./AuthContext";
 import useConversation from "../zustand/useConversation";
 import io from "socket.io-client";
 import notificationSound from "../assets/sounds/notification.mp3";
+import useNotifications from "../hooks/useNotifications";
 
 const SocketContext = createContext();
 
@@ -18,6 +19,7 @@ export const SocketContextProvider = ({ children }) => {
 	const [onlineUsers, setOnlineUsers] = useState([]);
 	const { authUser, setAuthUser } = useAuthContext();
 	const soundRef = useRef(new Audio(notificationSound));
+	const { showNotification } = useNotifications();
 
 	// Fetch blocked/muted users on mount
 	useEffect(() => {
@@ -98,6 +100,16 @@ export const SocketContextProvider = ({ children }) => {
 				if (!isMuted) {
 					soundRef.current.currentTime = 0;
 					soundRef.current.play().catch(() => {});
+
+					// Browser push notification when tab is not focused
+					if (document.hidden) {
+						const { conversations } = useConversation.getState();
+						const sender = conversations?.find((c) => c._id === message.senderId);
+						const senderName = sender?.fullName || "Someone";
+						const preview = message.message?.substring(0, 60) || "Sent a file";
+						const icon = sender?.profilePic || "/favicon.ico";
+						showNotification(senderName, preview, icon);
+					}
 				}
 			}
 

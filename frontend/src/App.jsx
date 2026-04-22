@@ -4,6 +4,7 @@ import Login from "./pages/login/Login";
 import SignUp from "./pages/signup/SignUp";
 import { Toaster } from "react-hot-toast";
 import { useAuthContext } from "./context/AuthContext";
+import CallModal from "./components/calls/CallModal";
 
 function App() {
 	const { authUser } = useAuthContext();
@@ -14,6 +15,7 @@ function App() {
 				<Route path='/login' element={authUser ? <Navigate to='/' /> : <Login />} />
 				<Route path='/signup' element={authUser ? <Navigate to='/' /> : <SignUp />} />
 			</Routes>
+			{authUser && <CallModal />}
 			<Toaster
 				position='top-center'
 				toastOptions={{

@@ -2,8 +2,10 @@ import { useState } from "react";
 import { IoSearchSharp } from "react-icons/io5";
 import useConversation from "../../zustand/useConversation";
 import toast from "react-hot-toast";
+import { useLanguage } from "../../context/LanguageContext";
 
 const SearchInput = () => {
+	const { t } = useLanguage();
 	const [search, setSearch] = useState("");
 	const { setSelectedConversation, conversations, clearUnreadCount } = useConversation();
 
@@ -35,7 +37,7 @@ const SearchInput = () => {
 			<IoSearchSharp className='absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4' />
 			<input
 				type='text'
-				placeholder='Search users...'
+				placeholder={t("searchUsers")}
 				className='w-full pl-10 pr-4 py-2.5 rounded-xl bg-base-300 border border-slate-700 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-primary transition-colors'
 				value={search}
 				onChange={(e) => setSearch(e.target.value)}

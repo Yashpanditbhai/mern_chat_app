@@ -11,9 +11,11 @@ import useConversation from "../../zustand/useConversation";
 import SettingsModal from "./SettingsModal";
 import { IoAdd, IoSettings } from "react-icons/io5";
 import StoriesBar from "../stories/StoriesBar";
+import { useLanguage } from "../../context/LanguageContext";
 
 const Sidebar = () => {
 	const { authUser } = useAuthContext();
+	const { t } = useLanguage();
 	const [showProfile, setShowProfile] = useState(false);
 	const [showSettings, setShowSettings] = useState(false);
 	const [showCreateGroup, setShowCreateGroup] = useState(false);
@@ -61,14 +63,14 @@ const Sidebar = () => {
 						<button
 							onClick={() => setShowCreateGroup(true)}
 							className='p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-base-300 transition-colors'
-							title='New group'
+							title={t("newGroup")}
 						>
 							<IoAdd className='w-5 h-5' />
 						</button>
 						<button
 							onClick={() => setShowSettings(true)}
 							className='p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-base-300 transition-colors'
-							title='Settings'
+							title={t("settings")}
 						>
 							<IoSettings className='w-5 h-5' />
 						</button>
@@ -87,13 +89,13 @@ const Sidebar = () => {
 				{groups && groups.length > 0 && (
 					<>
 						<div className='px-4 py-2'>
-							<p className='text-xs font-semibold text-slate-500 uppercase tracking-wide'>Groups</p>
+							<p className='text-xs font-semibold text-slate-500 uppercase tracking-wide'>{t("groups")}</p>
 						</div>
 						{groups.map((group) => (
 							<GroupConversation key={group._id} group={group} />
 						))}
 						<div className='px-4 py-2'>
-							<p className='text-xs font-semibold text-slate-500 uppercase tracking-wide'>Direct Messages</p>
+							<p className='text-xs font-semibold text-slate-500 uppercase tracking-wide'>{t("directMessages")}</p>
 						</div>
 					</>
 				)}

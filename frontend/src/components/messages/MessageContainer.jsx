@@ -9,9 +9,11 @@ import StarredPanel from "./StarredPanel";
 import PollsList from "./PollsList";
 import CreatePollModal from "./CreatePollModal";
 import { BsChatDotsFill } from "react-icons/bs";
-import { IoPeople, IoSearch, IoStar, IoEllipsisVertical, IoBan, IoVolumeOff, IoVolumeMedium, IoBarChart } from "react-icons/io5";
+import { IoPeople, IoSearch, IoStar, IoEllipsisVertical, IoBan, IoVolumeOff, IoVolumeMedium, IoBarChart, IoCall, IoVideocam, IoLockClosed, IoInformationCircle, IoClose } from "react-icons/io5";
 import { useAuthContext } from "../../context/AuthContext";
 import { useSocketContext } from "../../context/SocketContext";
+import { useCallContext } from "../../context/CallContext";
+import { useLanguage } from "../../context/LanguageContext";
 import { getProfilePic } from "../../utils/avatar";
 import toast from "react-hot-toast";
 
@@ -19,6 +21,8 @@ const MessageContainer = () => {
 	const { selectedConversation, setSelectedConversation, clearUnreadCount, typingUsers, blockedUsers, mutedUsers, setBlockedUsers, setMutedUsers } =
 		useConversation();
 	const { socket, onlineUsers } = useSocketContext();
+	const { startCall } = useCallContext();
+	const { t } = useLanguage();
 
 	const [showGroupInfo, setShowGroupInfo] = useState(false);
 	const [replyingTo, setReplyingTo] = useState(null);
@@ -28,6 +32,7 @@ const MessageContainer = () => {
 	const [showMenu, setShowMenu] = useState(false);
 	const [showPolls, setShowPolls] = useState(false);
 	const [showCreatePoll, setShowCreatePoll] = useState(false);
+	const [showSecurityInfo, setShowSecurityInfo] = useState(false);
 
 	const isGroup = selectedConversation?.isGroupChat;
 	const isOnline = !isGroup && selectedConversation
@@ -161,14 +166,14 @@ const MessageContainer = () => {
 											{selectedConversation.fullName}
 										</h3>
 										{isBlocked && (
-											<span className='text-[10px] px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded-full'>Blocked</span>
+											<span className='text-[10px] px-1.5 py-0.5 bg-red-500/20 text-red-400 rounded-full'>{t("blocked")}</span>
 										)}
 									</div>
 									<p className='text-xs'>
 										{isTyping ? (
-											<span className='text-green-400 font-medium'>typing...</span>
+											<span className='text-green-400 font-medium'>{t("typing")}</span>
 										) : isOnline ? (
-											<span className='text-green-400'>Online</span>
+											<span className='text-green-400'>{t("online")}</span>
 										) : (
 											<span className='text-slate-500'>{getLastSeenText()}</span>
 										)}
@@ -182,13 +187,41 @@ const MessageContainer = () => {
 							</>
 						)}
 
-						{/* Header action buttons */}
+						{/* E2E Encryption Indicator */}
 						<div className='ml-auto flex items-center gap-1'>
+							<button
+								onClick={() => setShowSecurityInfo(true)}
+								className='p-1.5 rounded-lg text-green-500 hover:bg-base-300 transition-colors flex items-center gap-1'
+								title={t("messagesSecured")}
+							>
+								<IoLockClosed className='w-3.5 h-3.5' />
+							</button>
+
+							{/* Call buttons (1-to-1 only) */}
+							{!isGroup && (
+								<>
+									<button
+										onClick={() => startCall(selectedConversation, "audio")}
+										className='p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-base-300 transition-colors'
+										title={t("audioCall")}
+									>
+										<IoCall className='w-4 h-4' />
+									</button>
+									<button
+										onClick={() => startCall(selectedConversation, "video")}
+										className='p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-base-300 transition-colors'
+										title={t("videoCall")}
+									>
+										<IoVideocam className='w-4 h-4' />
+									</button>
+								</>
+							)}
+
 							{isGroup && (
 								<button
 									onClick={() => setShowPolls(true)}
 									className='p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-base-300 transition-colors'
-									title='Polls'
+									title={t("polls")}
 								>
 									<IoBarChart className='w-4 h-4' />
 								</button>
@@ -196,14 +229,14 @@ const MessageContainer = () => {
 							<button
 								onClick={() => setShowSearch(true)}
 								className='p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-base-300 transition-colors'
-								title='Search messages'
+								title={t("searchMessages")}
 							>
 								<IoSearch className='w-4 h-4' />
 							</button>
 							<button
 								onClick={() => setShowStarred(true)}
 								className='p-2 rounded-lg text-slate-400 hover:text-yellow-400 hover:bg-base-300 transition-colors'
-								title='Starred messages'
+								title={t("starredMessages")}
 							>
 								<IoStar className='w-4 h-4' />
 							</button>
@@ -212,7 +245,7 @@ const MessageContainer = () => {
 									<button
 										onClick={() => setShowMenu((p) => !p)}
 										className='p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-base-300 transition-colors'
-										title='More options'
+										title={t("moreOptions")}
 									>
 										<IoEllipsisVertical className='w-4 h-4' />
 									</button>
@@ -223,14 +256,14 @@ const MessageContainer = () => {
 												className='w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-300 hover:bg-base-100 transition-colors'
 											>
 												<IoBan className='w-4 h-4' />
-												{isBlocked ? "Unblock" : "Block"}
+												{isBlocked ? t("unblock") : t("block")}
 											</button>
 											<button
 												onClick={handleMute}
 												className='w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-300 hover:bg-base-100 transition-colors'
 											>
 												{isMuted ? <IoVolumeMedium className='w-4 h-4' /> : <IoVolumeOff className='w-4 h-4' />}
-												{isMuted ? "Unmute" : "Mute"}
+												{isMuted ? t("unmute") : t("mute")}
 											</button>
 										</div>
 									)}
@@ -311,6 +344,29 @@ const MessageContainer = () => {
 							conversationId={selectedConversation._id}
 						/>
 					)}
+
+					{/* Security Info Modal */}
+					{showSecurityInfo && (
+						<div className='fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4' onClick={() => setShowSecurityInfo(false)}>
+							<div className='bg-base-200 rounded-2xl w-full max-w-sm p-6 relative' onClick={(e) => e.stopPropagation()}>
+								<button
+									onClick={() => setShowSecurityInfo(false)}
+									className='absolute top-3 right-3 p-1.5 hover:bg-base-300 rounded-full transition-colors'
+								>
+									<IoClose className='w-5 h-5 text-slate-400' />
+								</button>
+								<div className='flex items-center gap-3 mb-4'>
+									<div className='w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center'>
+										<IoLockClosed className='w-5 h-5 text-green-500' />
+									</div>
+									<h3 className='text-lg font-semibold text-white'>{t("securityInfo")}</h3>
+								</div>
+								<p className='text-sm text-slate-300 leading-relaxed'>
+									{t("securityDesc")}
+								</p>
+							</div>
+						</div>
+					)}
 				</>
 			)}
 		</div>
@@ -321,6 +377,7 @@ export default MessageContainer;
 
 const NoChatSelected = () => {
 	const { authUser } = useAuthContext();
+	const { t } = useLanguage();
 	return (
 		<div className='flex-1 flex items-center justify-center'>
 			<div className='text-center'>
@@ -328,10 +385,10 @@ const NoChatSelected = () => {
 					<BsChatDotsFill className='w-10 h-10 text-slate-600' />
 				</div>
 				<h2 className='text-xl font-semibold text-white mb-2'>
-					Welcome, {authUser?.fullName}
+					{t("welcome")}, {authUser?.fullName}
 				</h2>
 				<p className='text-slate-500 text-sm max-w-xs'>
-					Select a conversation from the sidebar to start chatting
+					{t("selectConversation")}
 				</p>
 			</div>
 		</div>

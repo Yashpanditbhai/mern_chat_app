@@ -1,5 +1,6 @@
 import { IoClose, IoSunny, IoMoon } from "react-icons/io5";
 import { useTheme } from "../../context/ThemeContext";
+import { useLanguage } from "../../context/LanguageContext";
 
 const WALLPAPERS = [
 	{ id: "", label: "None", color: "transparent" },
@@ -14,6 +15,7 @@ const WALLPAPERS = [
 
 const SettingsModal = ({ isOpen, onClose }) => {
 	const { isDark, toggleTheme, chatWallpaper, setChatWallpaper } = useTheme();
+	const { language, setLanguage, t, LANGUAGES } = useLanguage();
 
 	if (!isOpen) return null;
 
@@ -30,12 +32,12 @@ const SettingsModal = ({ isOpen, onClose }) => {
 					<IoClose className='w-5 h-5 text-slate-400' />
 				</button>
 
-				<h3 className='text-lg font-semibold text-white mb-5'>Settings</h3>
+				<h3 className='text-lg font-semibold text-white mb-5'>{t("settings")}</h3>
 
 				{/* Theme Toggle */}
 				<div className='mb-6'>
 					<label className='text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 block'>
-						Theme
+						{t("theme")}
 					</label>
 					<button
 						onClick={toggleTheme}
@@ -48,19 +50,44 @@ const SettingsModal = ({ isOpen, onClose }) => {
 								<IoSunny className='w-5 h-5 text-yellow-400' />
 							)}
 							<span className='text-sm text-white'>
-								{isDark ? "Dark Mode" : "Light Mode"}
+								{isDark ? t("darkMode") : t("lightMode")}
 							</span>
 						</div>
 						<span className='text-xs text-slate-400'>
-							Switch to {isDark ? "light" : "dark"}
+							{t("switchTo")} {isDark ? t("lightMode").toLowerCase() : t("darkMode").toLowerCase()}
 						</span>
 					</button>
+				</div>
+
+				{/* Language Selector */}
+				<div className='mb-6'>
+					<label className='text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 block'>
+						{t("language")}
+					</label>
+					<div className='flex flex-col gap-1'>
+						{LANGUAGES.map((lang) => (
+							<button
+								key={lang.code}
+								onClick={() => setLanguage(lang.code)}
+								className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-colors text-sm ${
+									language === lang.code
+										? "bg-primary/20 text-primary border border-primary/40"
+										: "bg-base-300 text-slate-300 hover:bg-base-100"
+								}`}
+							>
+								<span>{lang.label}</span>
+								{language === lang.code && (
+									<span className='text-xs text-primary font-medium'>Active</span>
+								)}
+							</button>
+						))}
+					</div>
 				</div>
 
 				{/* Chat Wallpaper */}
 				<div>
 					<label className='text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 block'>
-						Chat Wallpaper
+						{t("chatWallpaper")}
 					</label>
 					<div className='grid grid-cols-4 gap-2'>
 						{WALLPAPERS.map((wp) => (

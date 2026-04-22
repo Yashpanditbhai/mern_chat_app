@@ -3,6 +3,7 @@ import GenderCheckbox from "./GenderCheckbox";
 import { useState } from "react";
 import useSignup from "../../hooks/useSignup";
 import { BsChatDotsFill } from "react-icons/bs";
+import { useLanguage } from "../../context/LanguageContext";
 
 const SignUp = () => {
 	const [inputs, setInputs] = useState({
@@ -14,6 +15,7 @@ const SignUp = () => {
 	});
 
 	const { loading, signup } = useSignup();
+	const { t } = useLanguage();
 
 	const handleCheckboxChange = (gender) => {
 		setInputs({ ...inputs, gender });
@@ -31,15 +33,15 @@ const SignUp = () => {
 					<div className='inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4'>
 						<BsChatDotsFill className='w-8 h-8 text-primary' />
 					</div>
-					<h1 className='text-3xl font-bold text-white'>Create Account</h1>
-					<p className='text-slate-400 mt-2'>Join Flash Chat today</p>
+					<h1 className='text-3xl font-bold text-white'>{t("createAccount")}</h1>
+					<p className='text-slate-400 mt-2'>{t("joinFlashChat")}</p>
 				</div>
 
 				<div className='bg-base-200 rounded-2xl p-8 shadow-xl border border-base-300'>
 					<form onSubmit={handleSubmit} className='space-y-4'>
 						<div>
 							<label className='block text-sm font-medium text-slate-300 mb-2'>
-								Full Name
+								{t("fullName")}
 							</label>
 							<input
 								type='text'
@@ -52,7 +54,7 @@ const SignUp = () => {
 
 						<div>
 							<label className='block text-sm font-medium text-slate-300 mb-2'>
-								Username
+								{t("username")}
 							</label>
 							<input
 								type='text'
@@ -65,11 +67,11 @@ const SignUp = () => {
 
 						<div>
 							<label className='block text-sm font-medium text-slate-300 mb-2'>
-								Password
+								{t("password")}
 							</label>
 							<input
 								type='password'
-								placeholder='Min 6 characters'
+								placeholder={t("minChars")}
 								className='w-full px-4 py-3 rounded-xl bg-base-300 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors'
 								value={inputs.password}
 								onChange={(e) => setInputs({ ...inputs, password: e.target.value })}
@@ -78,11 +80,11 @@ const SignUp = () => {
 
 						<div>
 							<label className='block text-sm font-medium text-slate-300 mb-2'>
-								Confirm Password
+								{t("confirmPassword")}
 							</label>
 							<input
 								type='password'
-								placeholder='Confirm password'
+								placeholder={t("confirmPwd")}
 								className='w-full px-4 py-3 rounded-xl bg-base-300 border border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors'
 								value={inputs.confirmPassword}
 								onChange={(e) => setInputs({ ...inputs, confirmPassword: e.target.value })}
@@ -99,15 +101,15 @@ const SignUp = () => {
 							{loading ? (
 								<span className='loading loading-spinner loading-sm'></span>
 							) : (
-								"Create Account"
+								t("signUp")
 							)}
 						</button>
 					</form>
 
 					<p className='text-center text-slate-400 text-sm mt-6'>
-						Already have an account?{" "}
+						{t("alreadyHaveAccount")}{" "}
 						<Link to='/login' className='text-primary hover:text-blue-400 font-medium'>
-							Sign in
+							{t("signInLink")}
 						</Link>
 					</p>
 				</div>
