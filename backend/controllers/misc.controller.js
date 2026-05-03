@@ -1,12 +1,24 @@
 import fetch from "node-fetch";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// ─── Gemini AI Setup ──────────────────────────────────────────
+// ─── Azure OpenAI Setup ─────────────────────────────────────────
+const azureConfig = process.env.AZURE_OPENAI_API_KEY && process.env.AZURE_OPENAI_ENDPOINT ? {
+	endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+	apiKey: process.env.AZURE_OPENAI_API_KEY,
+	deployment: process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-4.1",
+	apiVersion: process.env.AZURE_OPENAI_API_VERSION || "2024-05-01-preview",
+} : null;
+
+if (azureConfig) {
+	console.log(`Azure OpenAI initialized (${azureConfig.deployment})`);
+}
+
+// ─── Gemini AI Setup (fallback) ─────────────────────────────────
 let geminiModel = null;
-if (process.env.GEMINI_API_KEY) {
+if (!azureConfig && process.env.GEMINI_API_KEY) {
 	const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 	geminiModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-	console.log("Gemini AI initialized");
+	console.log("Gemini AI initialized (fallback)");
 }
 
 // ─── GIF Search via Giphy ──────────────────────────────────────
@@ -58,6 +70,86 @@ Keep responses concise (2-3 sentences max unless the user asks for details). Be 
 const chatHistory = new Map();
 const MAX_HISTORY = 20;
 
+async function callAzureOpenAI(userId, userMessage) {
+	if (!azureConfig) return null;
+
+	if (!chatHistory.has(userId)) chatHistory.set(userId, []);
+	const history = chatHistory.get(userId);
+
+	const messages = [
+		{ role: "system", content: SYSTEM_PROMPT },
+		...history,
+		{ role: "user", content: userMessage },
+	];
+
+	const url = `${azureConfig.endpoint}openai/deployments/${azureConfig.deployment}/chat/completions?api-version=${azureConfig.apiVersion}`;
+
+	const response = await fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"api-key": azureConfig.apiKey,
+		},
+		body: JSON.stringify({
+			messages,
+			max_tokens: 500,
+			temperature: 0.7,
+		}),
+	});
+
+	if (!response.ok) {
+		const err = await response.text();
+		throw new Error(`Azure OpenAI error: ${response.status} - ${err}`);
+	}
+
+	const data = await response.json();
+	const reply = data.choices?.[0]?.message?.content;
+
+	if (reply) {
+		history.push(
+			{ role: "user", content: userMessage },
+			{ role: "assistant", content: reply }
+		);
+		if (history.length > MAX_HISTORY * 2) history.splice(0, 2);
+	}
+
+	return reply;
+}
+
+async function callGemini(userId, userMessage) {
+	if (!geminiModel) return null;
+
+	if (!chatHistory.has(userId)) chatHistory.set(userId, []);
+	const history = chatHistory.get(userId);
+
+	// Convert history to Gemini format
+	const geminiHistory = history.map((m) => ({
+		role: m.role === "assistant" ? "model" : "user",
+		parts: [{ text: m.content }],
+	}));
+
+	const chat = geminiModel.startChat({
+		history: [
+			{ role: "user", parts: [{ text: "System instruction: " + SYSTEM_PROMPT }] },
+			{ role: "model", parts: [{ text: "Understood! I'm Flash Bot, ready to help." }] },
+			...geminiHistory,
+		],
+	});
+
+	const result = await chat.sendMessage(userMessage);
+	const reply = result.response.text();
+
+	if (reply) {
+		history.push(
+			{ role: "user", content: userMessage },
+			{ role: "assistant", content: reply }
+		);
+		if (history.length > MAX_HISTORY * 2) history.splice(0, 2);
+	}
+
+	return reply;
+}
+
 export const aiChat = async (req, res) => {
 	try {
 		const { message } = req.body;
@@ -67,47 +159,30 @@ export const aiChat = async (req, res) => {
 			return res.status(400).json({ error: "Message is required" });
 		}
 
-		let response;
+		let response = null;
+		const userMessage = message.trim();
 
-		if (geminiModel) {
-			// Use Gemini AI
+		// Try Azure OpenAI first
+		if (azureConfig) {
 			try {
-				// Get or create chat history for this user
-				if (!chatHistory.has(userId)) {
-					chatHistory.set(userId, []);
-				}
-				const history = chatHistory.get(userId);
-
-				// Build conversation for Gemini
-				const chat = geminiModel.startChat({
-					history: [
-						{ role: "user", parts: [{ text: "System instruction: " + SYSTEM_PROMPT }] },
-						{ role: "model", parts: [{ text: "Understood! I'm Flash Bot, ready to help with Flash Chat and anything else." }] },
-						...history,
-					],
-				});
-
-				const result = await chat.sendMessage(message.trim());
-				response = result.response.text();
-
-				// Store in history (keep limited)
-				history.push(
-					{ role: "user", parts: [{ text: message.trim() }] },
-					{ role: "model", parts: [{ text: response }] }
-				);
-				if (history.length > MAX_HISTORY * 2) {
-					history.splice(0, 2); // Remove oldest pair
-				}
-			} catch (aiError) {
-				console.error("Gemini API error:", aiError.message);
-				// Fall through to fallback
-				response = null;
+				response = await callAzureOpenAI(userId, userMessage);
+			} catch (err) {
+				console.error("Azure OpenAI error:", err.message);
 			}
 		}
 
-		// Fallback if no API key or Gemini fails
+		// Try Gemini as fallback
+		if (!response && geminiModel) {
+			try {
+				response = await callGemini(userId, userMessage);
+			} catch (err) {
+				console.error("Gemini error:", err.message);
+			}
+		}
+
+		// Final fallback: pattern matching
 		if (!response) {
-			response = getFallbackResponse(message.trim().toLowerCase());
+			response = getFallbackResponse(userMessage.toLowerCase());
 		}
 
 		res.json({ response });
